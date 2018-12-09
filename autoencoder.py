@@ -27,7 +27,7 @@ class autoencoder(nn.Module):
             nn.ReLU(True),
             nn.Linear(128, 60),)
         self.decoder = nn.Sequential(
-            nn.Linear(64, 128),
+            nn.Linear(60, 128),
             nn.ReLU(True), nn.Linear(128, 28 * 28), nn.Sigmoid(),)
 
     def forward(self, x):
