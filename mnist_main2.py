@@ -25,12 +25,12 @@ class MLP(nn.Module):
 
 def do_PCA(dataloader):
     net_param_path = './sim_autoencoder.pth'
-    ae = autoencoder().cuda()
+    ae = autoencoder()
     ae.load_state_dict(torch.load(net_param_path))
     ae.eval()
     encodeds = []
     for img, y in dataloader:
-        img = Variable(img).cuda()
+        img = Variable(img)
         # y = Variable(y).cuda()
 
         img = img.view(-1, 28*28)
@@ -85,7 +85,7 @@ def santinizer(g_dict, C, sigma, batch_size):
         g_cat = torch.stack(gradients, dim=0)
         # print(g_cat.size()) 
         g_mean = torch.mean(g_cat, dim=0)
-        noise = noise_dist.sample(g_mean.size()).cuda()
+        noise = noise_dist.sample(g_mean.size())
         g_dict[var] = g_mean + noise
         # g_dict[var] = g_mean
         # print("g_dict_var: ", g_dict[var])
@@ -117,7 +117,7 @@ def adjust_learning_rate(optimizer, epoch, init_lr=0.1, saturate_epoch=10, stop_
     for param_group in optimizer.param_groups:
             param_group['lr'] = lr
 
-def build_mlp(epochs=1, batch_size=600, learning_rate=0.05, C=4.0, sigma=4.0):
+def build_mlp(epochs=100, batch_size=600, learning_rate=0.1, C=4.0, sigma=2.0):
     img_transforms = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307, ), (0.3081, ))
@@ -136,15 +136,15 @@ def build_mlp(epochs=1, batch_size=600, learning_rate=0.05, C=4.0, sigma=4.0):
         CodeDataset(codes, datasets.MNIST('./data', train=True)),
         batch_size=batch_size, shuffle=True, drop_last=True
     )
-    mlp = MLP().cuda()
+    mlp = MLP()
     loss_fn = nn.CrossEntropyLoss(reduce=False)
     train_op = optim.SGD(mlp.parameters(), lr=learning_rate)
 
     for epoch in range(epochs):
-        # adjust_learning_rate(train_op, epoch)
+        adjust_learning_rate(train_op, epoch)
         for batch_idx, (data, y) in enumerate(code_loader):
-            data = Variable(data).cuda()
-            y = Variable(y).cuda()
+            data = Variable(data)
+            y = Variable(y)
 
             # output = mlp(data)
             # loss = loss_fn(output, y)
@@ -152,20 +152,6 @@ def build_mlp(epochs=1, batch_size=600, learning_rate=0.05, C=4.0, sigma=4.0):
             # train_op.zero_grad()
             ####
             g_dict = collections.defaultdict(list)
-            # loss_val = 0
-            # batch_size = data.size()[0]
-            # for i in range(batch_size):
-            #     d_i = data[i].unsqueeze(0)
-            #     y_i = y[i].unsqueeze(0)
-            #     output = mlp(d_i)
-            #     loss = loss_fn(output, y_i)
-            #     loss_val += loss.item()
-            #     train_op.zero_grad()
-            #     loss.backward(torch.ones_like(loss.data))
-            #     for name, param in mlp.named_parameters():
-            #         #print(param.grad)
-            #         g_dict[name].append(copy.deepcopy(param.grad.data))
-            # loss_val /= batch_size
             g_dict, loss_val = per_example_gradient(data, y, mlp, loss_fn, g_dict, train_op)
             g_dict = santinizer(g_dict, C, sigma, batch_size)
             train_op.zero_grad()
@@ -186,11 +172,17 @@ def build_mlp(epochs=1, batch_size=600, learning_rate=0.05, C=4.0, sigma=4.0):
             # loss.backward()
             train_op.step()
 
-            if batch_idx % 100 == 0:
-            	print('Train Epoch: {} [{} / {} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                	epoch, batch_idx*len(data), len(train_loader.dataset),
-                	100.0 * batch_idx / len(train_loader), loss_val
-            	))
+            if batch_idx % 10 == 0:
+                print('Train Epoch: {} [{} / {} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                    epoch, batch_idx*len(data), len(train_loader.dataset),
+                    100.0 * batch_idx / len(train_loader), loss_val
+                    ))
+                output = mlp(data)
+                pred = output.data.max(1)[1]
+                correct = pred.eq(y.data).sum()
+                print('train accuracy: ', correct.item()/batch_size)
+
+
 
     test_loss = 0
     correct = 0
@@ -201,8 +193,8 @@ def build_mlp(epochs=1, batch_size=600, learning_rate=0.05, C=4.0, sigma=4.0):
     )
     for data, target in code_test_loader:
         data, target = Variable(data), Variable(target)
-        data = data.cuda()
-        target = target.cuda()
+        data = data
+        target = target
         # data = data.view(-1, 28*28)
         output = mlp(data)
 

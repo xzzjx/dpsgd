@@ -38,10 +38,10 @@ def build_ae(num_epochs=100, batch_size=128, learning_rate=0.001):
         transforms.Normalize((0.1307,), (0.3081,))
     ])
 
-    dataset = MNIST('./data', transform=img_transform)
+    dataset = MNIST('./data', transform=img_transform, download=True)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     
-    model = autoencoder().cuda()
+    model = autoencoder()
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(
         model.parameters(), lr=learning_rate, weight_decay=1e-5)
@@ -50,7 +50,7 @@ def build_ae(num_epochs=100, batch_size=128, learning_rate=0.001):
         for data in dataloader:
             img, _ = data
             img = img.view(img.size(0), -1)
-            img = Variable(img).cuda()
+            img = Variable(img)
             # ===================forward=====================
             _, output = model(img)
             loss = criterion(output, img)
