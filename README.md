@@ -9,9 +9,11 @@
 ## Todo
 
 - [x] 完成fully connected network mnist
-- [ ] 完成autoencoder mnist，对mnist做PCA降维处理。保存模型，加载自己数据
-- [ ] 完成per example gradient
+- [x] 完成autoencoder mnist，对mnist做PCA降维处理。保存模型，加载自己数据
+- [x] 完成per example gradient
 - [x] 查看不同层的梯度，以及总梯度的l2norm, l2norm的方差变化的情况
+- [ ] 完成privacy accountant
+- [ ] 完成dp_pca
 
 ## Tricks
 
