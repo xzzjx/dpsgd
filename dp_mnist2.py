@@ -11,7 +11,12 @@ from torch import optim
 import collections
 import copy
 import math
+import numpy as np
 
+SEED = 32
+torch.manual_seed(SEED)
+torch.cuda.manual_seed(SEED)
+np.random.seed(SEED)
 class MLP(nn.Module):
     def __init__(self):
         super(MLP, self).__init__()
